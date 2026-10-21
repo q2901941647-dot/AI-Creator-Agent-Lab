@@ -1,7 +1,7 @@
 # AI Creator Agent Lab
 
 **AI 创作智能体策略与评测作品集 · 32 页
-🔗 **在线预览**：`https://<你的用户名>.github.io/<仓库名>/`
+🔗 **在线预览**：`https://q2901941647-dot.github.io/AI-Creator-Agent-Lab/`
 <!-- 上传后把上面这行替换成真实链接，并删掉这条注释 -->
 
 ---
