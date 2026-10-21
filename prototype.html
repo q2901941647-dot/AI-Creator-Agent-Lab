@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CreatorPilot · 可交互原型</title>
+<style>
+:root{
+  --ink:#14140F;--ink2:#3C3C34;--ink3:#5E5E54;--muted:#8A8A7E;
+  --line:#DDDBD2;--line2:#ECEAE2;--paper:#FBFAF7;--fill:#F2F0E8;
+  --accent:#E0402A;--accent-soft:#FBEDE9;--green:#22704C;--green-soft:#E8F1EB;
+  --blue:#2B45B8;--blue-soft:#EDEFF9;--amber:#9A6B0C;--amber-soft:#F8F0DD;
+  --mono:"SFMono-Regular",Consolas,"Roboto Mono",monospace;
+  --sans:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#EDEBE4;color:var(--ink);font-family:var(--sans);font-size:13px;line-height:1.7;-webkit-font-smoothing:antialiased}
+.topbar{background:var(--ink);color:#EDEBE3;height:38px;display:flex;align-items:center;gap:14px;padding:0 18px;font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;position:sticky;top:0;z-index:50}
+.topbar .dot{width:6px;height:6px;border-radius:50%;background:#5AD08B}
+.topbar .tag{border:1px solid rgba(255,255,255,.28);padding:2px 6px;border-radius:2px;font-size:9px;color:#CFCCC2}
+.topbar .sp{flex:1}
+.wrap{max-width:1240px;margin:0 auto;padding:22px 20px 60px}
+.hd{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;border-bottom:1.4px solid var(--ink);padding-bottom:12px;margin-bottom:16px}
+.hd h1{margin:0;font-size:21px;font-weight:700;letter-spacing:-.01em}
+.hd .sub{font-size:11.5px;color:var(--ink3);margin-top:3px}
+.hd .meta{font-family:var(--mono);font-size:9px;color:var(--muted);text-align:right;line-height:1.7;letter-spacing:.05em}
+.grid{display:grid;grid-template-columns:1fr 372px;gap:18px;align-items:start}
+.card{background:var(--paper);border:1px solid var(--line);padding:16px 18px}
+.card+.card{margin-top:12px}
+.eyebrow{font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--muted);display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.eyebrow::before{content:"";width:5px;height:5px;background:var(--accent)}
+.eyebrow.plain::before{display:none}
+h2{font-size:13px;margin:0 0 10px;font-weight:700}
+textarea{width:100%;min-height:88px;border:1px solid var(--line);background:#fff;padding:10px 12px;font-family:var(--sans);font-size:13px;line-height:1.75;color:var(--ink2);resize:vertical;outline:none}
+textarea:focus{border-color:var(--ink)}
+.presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.preset{font-size:10.5px;border:1px solid var(--line);background:#fff;padding:3px 8px;cursor:pointer;color:var(--ink3)}
+.preset:hover{border-color:var(--ink);color:var(--ink)}
+.btn{display:inline-flex;align-items:center;gap:6px;background:var(--ink);color:#fff;border:0;padding:8px 18px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:var(--sans)}
+.btn:hover{background:#000}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--ink3);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--ink);color:var(--ink)}
+.btn.red{background:var(--accent)}
+.btn.sm{padding:4px 10px;font-size:11px}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.spread{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;border:1px solid var(--line);background:#fff;padding:2px 7px;border-radius:2px;margin:0 5px 5px 0}
+.chip b{font-family:var(--mono);font-size:10px;color:var(--muted);font-weight:600}
+.chip.inf{border-color:#F3D3CA;background:var(--accent-soft);color:#A62E1A}
+.chip .x{cursor:pointer;color:var(--muted);font-size:12px;line-height:1}
+.chip .x:hover{color:var(--accent)}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+.xs{font-size:10.5px;line-height:1.65;color:var(--ink3)}
+
+/* plan */
+.node{border:1px solid var(--line);background:#fff;padding:9px 11px;position:relative;transition:.18s}
+.node+.node{margin-top:6px}
+.node.active{border-color:var(--accent);background:var(--accent-soft)}
+.node.done{background:#fff}
+.node.err{border-color:var(--accent);background:var(--accent-soft)}
+.node .n-top{display:flex;align-items:center;gap:8px}
+.node .idx{font-family:var(--mono);font-size:9.5px;color:var(--muted);width:16px}
+.node.active .idx,.node.err .idx{color:var(--accent)}
+.node .name{font-size:12px;font-weight:600}
+.node .op{font-family:var(--mono);font-size:9px;color:var(--muted);margin-left:auto}
+.node .desc{font-size:10.5px;color:var(--ink3);margin:3px 0 0 24px;line-height:1.6}
+.node .st{font-family:var(--mono);font-size:9px;padding:1px 5px;border-radius:2px;margin-left:8px}
+.st.wait{background:var(--fill);color:var(--muted)}
+.st.run{background:var(--accent);color:#fff}
+.st.ok{background:var(--green-soft);color:var(--green)}
+.st.deg{background:var(--amber-soft);color:var(--amber)}
+.st.fail{background:var(--accent);color:#fff}
+.spin{display:inline-block;width:8px;height:8px;border:1.5px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-1px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.rerun{font-family:var(--mono);font-size:9px;border:1px solid var(--line);background:#fff;color:var(--ink3);padding:1px 5px;cursor:pointer;margin-left:6px}
+.rerun:hover{border-color:var(--ink);color:var(--ink)}
+
+/* right col */
+.preview{background:var(--ink);aspect-ratio:9/16;max-height:340px;margin:0 auto;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.preview .ph{position:absolute;inset:0;background:
+  radial-gradient(120% 80% at 30% 20%,#3A3A33 0%,#14140F 60%);}
+.preview .cap{position:relative;color:#fff;text-align:center;padding:0 18px;font-size:13px;line-height:1.7;font-weight:600}
+.preview .tl{position:absolute;left:0;right:0;bottom:0;height:34px;background:linear-gradient(transparent,rgba(0,0,0,.9));display:flex;align-items:center;padding:0 10px;gap:8px}
+.preview .tl .bar{flex:1;height:3px;background:rgba(255,255,255,.22)}
+.preview .tl .bar i{display:block;height:3px;background:var(--accent);width:0}
+.preview .tl .tm{font-family:var(--mono);font-size:9px;color:#fff}
+.preview .badge{position:absolute;top:8px;left:8px;font-family:var(--mono);font-size:8.5px;background:rgba(255,255,255,.14);color:#fff;padding:2px 6px}
+
+.check{display:flex;align-items:flex-start;gap:8px;padding:5.5px 0;border-bottom:1px solid var(--line2);font-size:11.5px}
+.check:last-child{border-bottom:0}
+.check .ic{font-family:var(--mono);font-size:11px;width:14px;flex:none;line-height:1.6}
+.check .ic.ok{color:var(--green)}.check .ic.no{color:var(--accent)}.check .ic.wa{color:var(--amber)}.check .ic.nu{color:var(--muted)}
+.check .tx{flex:1;color:var(--ink2);display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.check .tx .sv{font-family:var(--mono);font-size:9.5px;color:var(--muted);white-space:nowrap}
+.check .tx small{display:block;color:var(--muted);font-size:10px}
+
+.log{font-family:var(--mono);font-size:9.5px;line-height:1.75;color:var(--ink3);max-height:150px;overflow:auto;background:#fff;border:1px solid var(--line2);padding:8px 10px}
+.log div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.log .a{color:var(--accent)}
+.log .g{color:var(--green)}
+
+/* modal */
+.mask{position:fixed;inset:0;background:rgba(20,20,15,.5);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+.mask.on{display:flex}
+.modal{background:var(--paper);max-width:440px;width:100%;border:1px solid var(--ink)}
+.modal .mh{padding:13px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.modal .mh b{font-size:13px}
+.modal .mb{padding:14px 16px}
+.opt{border:1px solid var(--line);padding:9px 11px;cursor:pointer;background:#fff;margin-bottom:7px}
+.opt:hover{border-color:var(--ink3)}
+.opt.sel{border:1.5px solid var(--ink);background:#fff}
+.opt b{font-size:11.5px}
+.opt .d{font-size:10.5px;color:var(--ink3)}
+.modal .mf{padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end}
+
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:9px 16px;font-size:12px;opacity:0;pointer-events:none;transition:.25s;z-index:200;border-radius:2px}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.hidden{display:none!important}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+.gone{opacity:0;pointer-events:none}
+.bar2{height:4px;background:#E2DFD6;margin-top:4px}
+.bar2 i{display:block;height:4px;background:var(--ink);width:0;transition:width .3s}
+.tagbox{background:var(--fill);padding:9px 11px;font-size:10.5px;line-height:1.7;color:var(--ink2)}
+.deliver-item{display:flex;gap:9px;padding:7px 0;border-bottom:1px solid var(--line2);font-size:11.5px;align-items:flex-start}
+.deliver-item .k{width:74px;color:var(--muted);font-family:var(--mono);font-size:9.5px;flex:none;padding-top:2px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="dot"></span>
+  <span>CREATORPILOT · 交互原型</span>
+  <span class="tag">工具调用为模拟实现</span>
+  <span class="tag">无真实模型 / 无网络请求</span>
+  <span class="sp"></span>
+  <span>对应作品集 P.10 / P.14</span>
+</div>
+
+<div class="wrap">
+  <div class="hd">
+    <div>
+      <h1>CreatorPilot · 从一句话到可交付</h1>
+      <div class="sub">把自然语言编译成约束与任务图，每一步都能被看见、被改、被回退。</div>
+    </div>
+    <div class="meta">
+      STEP <span id="stepNo">1</span> / 4<br>
+      <span id="stepName">需求输入</span>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- ============ LEFT ============ -->
+    <div>
+      <!-- STEP 1 -->
+      <section id="s1" class="card">
+        <div class="eyebrow">01 需求输入</div>
+        <h2>用一句话说清你要什么</h2>
+        <textarea id="input">帮我做一条 30 秒的数码产品推荐视频，面向 18–25 岁用户，开头要有吸引力，包含产品卖点、字幕和背景音乐，输出 9:16 竖屏版本。</textarea>
+        <div class="presets">
+          <span class="preset" data-t="帮我做一条 15 秒的耳机推荐视频，竖屏，要有字幕，开头用提问的方式，面向大学生。">短任务 · 15s 耳机</span>
+          <span class="preset" data-t="做一条 45 秒的护肤品种草，面向 35–45 岁，风格要克制专业，必须有 6 个卖点，加 BGM。">多约束 · 45s 护肤品</span>
+          <span class="preset" data-t="帮我做个视频。">信息缺失 · 只有一句话</span>
+        </div>
+        <div class="row" style="margin-top:14px">
+          <button class="btn" id="btnParse">解析需求 →</button>
+          <span class="xs muted">会抽取约束、标出我替你补的隐含项</span>
+        </div>
+      </section>
+
+      <!-- STEP 2 -->
+      <section id="s2" class="card hidden">
+        <div class="spread">
+          <div class="eyebrow" style="margin:0">02 约束与计划</div>
+          <span class="xs muted">计划可折叠 · 节点状态实时更新</span>
+        </div>
+        <h2 style="margin-top:10px">我理解到的约束 <span class="xs muted" id="cCount"></span></h2>
+        <div id="chips"></div>
+        <div class="row" style="margin:6px 0 0">
+          <span class="xs muted">点 <b>×</b> 可以删掉我替你补的项；删掉后对应检查会跳过。</span>
+        </div>
+
+        <div class="spread" style="margin-top:16px">
+          <h2 style="margin:0">执行计划</h2>
+          <span class="xs muted" id="planMeta">6 个节点 · 预计 2′10″</span>
+        </div>
+        <div id="plan" style="margin-top:8px"></div>
+
+        <div class="row" style="margin-top:14px">
+          <button class="btn" id="btnRun">开始执行 →</button>
+          <button class="btn ghost" id="btnBack1">改需求</button>
+        </div>
+      </section>
+
+      <!-- STEP 3 -->
+      <section id="s3" class="card hidden">
+        <div class="spread">
+          <div class="eyebrow" style="margin:0">03 执行中</div>
+          <span class="xs mono" id="runTime">00:00</span>
+        </div>
+        <h2 style="margin-top:10px">节点逐条执行，失败的会就地降级</h2>
+        <div id="plan2"></div>
+        <div class="tagbox" style="margin-top:12px">
+          <b>想看点意外？</b>　<span class="xs">故意在「素材检索」注入一次失败，看它怎么走降级而不是崩掉。</span>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn ghost sm" id="btnInject">注入素材失败</button>
+          <button class="btn ghost sm" id="btnSkip">跳过，直接出片</button>
+        </div>
+      </section>
+
+      <!-- STEP 4 -->
+      <section id="s4" class="card hidden">
+        <div class="spread">
+          <div class="eyebrow" style="margin:0">04 交付</div>
+          <span class="xs" id="verdict"></span>
+        </div>
+        <div class="eyebrow" style="margin-top:8px">节点状态 · 可单独重跑</div>
+        <div id="plan3" style="margin:6px 0 14px"></div>
+        <h2>交付清单</h2>
+        <div id="deliver"></div>
+        <div class="row" style="margin-top:14px">
+          <button class="btn" id="btnRestart">换个需求重来</button>
+          <button class="btn ghost" id="btnRerunAll">重跑全部节点（对照）</button>
+        </div>
+        <div class="xs muted" style="margin-top:8px">点任一节点右侧的 <span class="mono">rerun</span>，可以看到「只重跑该节点、其余复用」的效果。</div>
+      </section>
+    </div>
+
+    <!-- ============ RIGHT ============ -->
+    <aside>
+      <div class="card">
+        <div class="eyebrow">预览</div>
+        <div class="preview">
+          <div class="ph"></div>
+          <div class="cap" id="pvCap">等待生成</div>
+          <div class="badge" id="pvBadge">9:16 · 00:00</div>
+          <div class="tl"><span class="tm" id="pvT">00:00</span><span class="bar"><i id="pvBar"></i></span><span class="tm">00:30</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="eyebrow">质量检查 · 6 项</div>
+        <div id="checks"></div>
+      </div>
+
+      <div class="card">
+        <div class="eyebrow">执行日志 · trace</div>
+        <div class="log" id="log"><div class="muted">等待开始…</div></div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="card" style="margin-top:18px">
+    <div class="grid3">
+      <div>
+        <div class="eyebrow">这是个演示，不是真产品</div>
+        <p class="xs">所有工具调用（生成脚本 / 检索素材 / 配音 / 剪辑）都返回<strong>预置结果</strong>，
+        用延时模拟耗时，<strong>没有调用任何真实模型，也不发网络请求</strong>。</p>
+      </div>
+      <div>
+        <div class="eyebrow">哪些逻辑是真的</div>
+        <p class="xs">需求解析（关键词 + 槽位规则）、任务图与状态迁移、失败降级、确认卡分支、单节点重跑、
+        检查项与交付清单的联动——都是在浏览器里真实跑的。</p>
+      </div>
+      <div>
+        <div class="eyebrow">建议怎么点</div>
+        <p class="xs">① 用第二个预设（多约束）看约束清单 → ② 删掉一个「补」的约束，看检查项变化 →
+        ③ 执行时点「注入素材失败」→ ④ 在交付页对某个节点点 rerun。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- confirm modal -->
+<div class="mask" id="mask">
+  <div class="modal">
+    <div class="mh">
+      <div>
+        <b>需要你确认：1 条素材匹配度偏低</b>
+        <div class="xs" style="margin-top:3px">位于 00:12，检索匹配分 0.42（可用线 0.50）。</div>
+      </div>
+      <span class="chip" style="margin:0;border-color:#F3D3CA;background:var(--accent-soft);color:#A62E1C">R2</span>
+    </div>
+    <div class="mb" id="opts">
+      <div class="opt sel" data-o="replace"><b>用文字卡替代该镜头</b><span class="mono" style="font-size:9px;color:var(--accent)"> 推荐</span><div class="d">保持节奏不断，交付时标注 1 处降级</div></div>
+      <div class="opt" data-o="keep"><b>保留低匹配素材</b><div class="d">可能看起来不对，需要你事后手动换</div></div>
+      <div class="opt" data-o="upload"><b>我稍后上传</b><div class="d">暂停该节点，其他节点继续</div></div>
+    </div>
+    <div class="mf">
+      <button class="btn ghost sm" id="mCancel">稍后处理</button>
+      <button class="btn sm" id="mOk">确认</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  var NODES = [
+    {id:'S1',name:'写脚本',op:'script.write',desc:'按约束生成 6 句口播稿，标注每句时长',t:28},
+    {id:'S2',name:'开头 3 版',op:'hook.variants',desc:'反差 / 提问 / 数字各一版，并列对比',t:15},
+    {id:'S3',name:'拆分镜',op:'shot.plan',desc:'9 个镜头，标注景别、情绪、素材需求',t:22},
+    {id:'S4',name:'找素材',op:'asset.search',desc:'按分镜检索，匹配分 <0.5 走降级',t:45},
+    {id:'S5',name:'配音+字幕',op:'tts + caption',desc:'逐句对齐时间戳，字幕在语义处断句',t:12},
+    {id:'S6',name:'粗剪',op:'edit.roughcut',desc:'按时间线合成，输出可编辑工程',t:8}
+  ];
+  var CHECKS = [
+    {k:'时长', name:'时长 29–31s'},
+    {k:'画幅', name:'画幅 9:16'},
+    {k:'字幕', name:'字幕逐句对齐'},
+    {k:'卖点', name:'卖点全覆盖'},
+    {k:'__asset',  name:'素材匹配度 ≥0.5'},
+    {k:'__comply', name:'无极限词'}
+  ];
+
+  var state = {
+    step:1, constraints:[], nodes:[], runIdx:-1, degraded:false,
+    failNext:false, elapsed:0, timer:null
+  };
+
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
+  function toast(msg){ var t=$('toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(t._x); t._x=setTimeout(function(){t.classList.remove('on');},1900); }
+
+  function log(msg, cls){
+    var l=$('log');
+    if(l.querySelector('.muted') && l.children.length===1) l.innerHTML='';
+    var d=document.createElement('div');
+    if(cls) d.className=cls;
+    var ts = 'T+' + (state.elapsed/1000).toFixed(1) + 's';
+    d.textContent = ts + '  ' + msg;
+    l.appendChild(d); l.scrollTop = l.scrollHeight;
+  }
+
+  /* ---------- parse ---------- */
+  function parse(text){
+    var c=[], t=text;
+    var m;
+    if((m=t.match(/(\d+)\s*秒/))) c.push({k:'时长',v:m[1]+'s',src:'e'});
+    if(/9:16|竖屏|竖版/.test(t)) c.push({k:'画幅',v:'9:16',src:'e'});
+    else if(/16:9|横屏/.test(t)) c.push({k:'画幅',v:'16:9',src:'e'});
+    if((m=t.match(/(\d+)\s*[–\-~到]\s*(\d+)\s*岁/))) c.push({k:'受众',v:m[1]+'–'+m[2]+' 岁',src:'e'});
+    else if(/大学生|学生/.test(t)) c.push({k:'受众',v:'18–22 岁（推断）',src:'i'});
+    if(/字幕/.test(t)) c.push({k:'字幕',v:'逐句对齐',src:'e'});
+    if(/背景音乐|BGM|音乐/i.test(t)) c.push({k:'BGM',v:'轻电子 / −18dB',src:'e'});
+    if(/卖点/.test(t)) c.push({k:'卖点',v:'逐个校验',src:'e'});
+    if(/开头|钩子|吸引/.test(t)) c.push({k:'开头钩子',v:'前 3s 留人',src:'e'});
+
+    // inferred
+    if(!c.some(function(x){return x.k==='时长';})) c.push({k:'时长',v:'30s（默认）',src:'i'});
+    if(!c.some(function(x){return x.k==='画幅';})) c.push({k:'画幅',v:'9:16（默认）',src:'i'});
+    if(!c.some(function(x){return x.k==='开头钩子';})) c.push({k:'开头钩子',v:'前 3s 留人',src:'i'});
+    c.push({k:'合规',v:'禁极限词',src:'i'});
+    if(!c.some(function(x){return x.k==='受众';})) c.push({k:'受众',v:'18–25 岁（默认）',src:'i'});
+    return c;
+  }
+
+  function renderChips(){
+    var box=$('chips'); box.innerHTML='';
+    state.constraints.forEach(function(c,i){
+      var el=document.createElement('span');
+      el.className='chip'+(c.src==='i'?' inf':'');
+      el.innerHTML = (c.src==='i'?'<b>补</b>':'') + esc(c.k) + '　' + esc(c.v);
+      var x=document.createElement('span'); x.className='x'; x.textContent='×';
+      x.onclick=function(){
+        state.constraints.splice(i,1); renderChips();
+        toast('已删除「'+c.k+'」，对应检查会跳过');
+        renderChecks();
+      };
+      el.appendChild(x); box.appendChild(el);
+    });
+    $('cCount').textContent = '（' + state.constraints.length + ' 项，其中 ' +
+      state.constraints.filter(function(c){return c.src==='i';}).length + ' 项是我补的）';
+  }
+
+  function renderChecks(){
+    var box=$('checks'); if(!box) return;
+    var has=function(k){
+      if(k.indexOf('__')===0) return true;
+      return state.constraints.some(function(c){return c.k===k;});
+    };
+    var allDone = state.nodes.length>0 && state.nodes.every(function(n){
+      return n.status==='done'||n.status==='degraded'||n.status==='reused';
+    });
+    box.innerHTML = CHECKS.map(function(c){
+      var st='nu', tx='等待', sub='';
+      if(!has(c.k)){ st='nu'; tx='已跳过'; sub='约束已删'; }
+      else if(state.step>=3 && allDone){
+        if(c.k==='__asset' && state.degraded){ st='wa'; tx='1 处降级'; sub='第 12s 文字卡'; }
+        else if(c.k==='时长'){ st='ok'; tx='通过'; sub='29.4s'; }
+        else if(c.k==='画幅'){ st='ok'; tx='通过'; sub='1080×1920'; }
+        else if(c.k==='字幕'){ st='ok'; tx='通过'; sub='6 句对齐'; }
+        else if(c.k==='卖点'){ st='ok'; tx='通过'; sub='3/3'; }
+        else { st='ok'; tx='通过'; sub=''; }
+      } else if(state.step>=3){ st='wa'; tx='执行中'; sub=''; }
+      var ic = st==='ok'?'✓':st==='wa'?'!':'·';
+      return '<div class="check"><span class="ic '+st+'">'+ic+'</span><span class="tx"><span>'+c.name+
+        '</span><span class="sv">'+(sub?sub+' · ':'')+tx+'</span></span></div>';
+    }).join('');
+  }
+
+  /* ---------- plan ---------- */
+  function renderPlan(container, interactive){
+    var box=$(container); box.innerHTML='';
+    state.nodes.forEach(function(n,i){
+      var el=document.createElement('div');
+      el.className='node'+(n.status==='running'?' active':'')+(n.status==='failed'?' err':'');
+      var stTxt = {wait:'等待',running:'执行中',done:'完成',degraded:'降级',failed:'失败',reused:'复用'}[n.status]||'等待';
+      var stCls = {wait:'wait',running:'run',done:'ok',degraded:'deg',failed:'fail',reused:'wait'}[n.status]||'wait';
+      var stInner = n.status==='running' ? '<span class="spin"></span> 执行中' : stTxt;
+      var rerun = (interactive && (n.status==='done'||n.status==='degraded')) ? '<span class="rerun" data-i="'+i+'">rerun</span>' : '';
+      el.innerHTML='<div class="n-top"><span class="idx">0'+(i+1)+'</span><span class="name">'+n.name+
+        '</span><span class="op">'+n.op+'</span><span class="st '+stCls+'">'+stInner+'</span>'+rerun+'</div>'+
+        '<div class="desc">'+n.desc+(n.note?'　<b style="color:var(--amber)">'+n.note+'</b>':'')+'</div>';
+      box.appendChild(el);
+    });
+    box.querySelectorAll('.rerun').forEach(function(b){
+      b.onclick=function(){
+        var i=+b.dataset.i; rerunOne(i);
+      };
+    });
+  }
+
+  /* ---------- run ---------- */
+  function startRun(){
+    state.step=3; show(3);
+    state.nodes.forEach(function(n){ n.status='wait'; n.note=''; });
+    renderPlan('plan2', false); renderChecks();
+    state.degraded=false; state.failNext=false;
+    state.elapsed=0;
+    clearInterval(state.timer);
+    state.timer=setInterval(function(){
+      state.elapsed+=100; var s=Math.floor(state.elapsed/1000);
+      $('runTime').textContent='00:'+String(s).padStart(2,'0');
+    },100);
+    log('start task t_8f3a　nodes=6　budget=24 calls');
+    step(0);
+  }
+
+  function step(i){
+    if(i>=state.nodes.length){ finish(); return; }
+    state.runIdx=i;
+    var n=state.nodes[i];
+    n.status='running'; renderPlan('plan2', false);
+    log(n.id+' → '+n.op+' …');
+    var dur = 420 + Math.random()*260;
+
+    setTimeout(function(){
+      if(n.id==='S4' && state.failNext){
+        n.status='failed'; renderPlan('plan2', false);
+        log('S4 → E_NO_MATCH（匹配分 0.42 < 0.50）','a');
+        askConfirm(function(choice){
+          n.status='degraded';
+          n.note = choice==='replace' ? '1 处用文字卡替代' :
+                   choice==='keep' ? '保留低匹配素材' : '等待上传';
+          state.degraded = true;
+          renderPlan('plan2', false); renderChecks();
+          log('S4 → 降级：'+n.note,'g');
+          step(i+1);
+        });
+        return;
+      }
+      n.status='done'; renderPlan('plan2', false);
+      log(n.id+' → ok ('+Math.round(dur)+'ms)','g');
+      if(n.id==='S4'){ /* normal */ }
+      renderChecks();
+      step(i+1);
+    }, dur);
+  }
+
+  function finish(){
+    clearInterval(state.timer);
+    state.step=4; show(4);
+    state.nodes.forEach(function(n){ if(n.status==='running') n.status='done'; });
+    renderPlan('plan3', true);
+    renderChecks();
+    var hasDeg = state.nodes.some(function(n){return n.status==='degraded';});
+    $('verdict').innerHTML = hasDeg
+      ? '<span style="color:var(--amber)">部分完成 · 1 处降级</span>'
+      : '<span style="color:var(--green)">全部通过 · 可直接发布</span>';
+    $('pvBadge').textContent='9:16 · 00:29';
+    $('pvCap').textContent='「一天一充的时代，它凭什么还敢卖这个价」';
+    $('pvBar').style.width='98%';
+    $('pvT').textContent='00:29';
+    renderDeliver(hasDeg);
+    log('QA → 6 项检查完成' + (hasDeg?'（1 项降级）':'') ,'g');
+  }
+
+  function renderDeliver(hasDeg){
+    var rows=[
+      ['成片','29.4s · 1080×1920 · 已过检查','ok'],
+      ['可编辑工程','timeline.json（6 轨）','ok'],
+      ['素材清单','9 条，含授权来源','ok'],
+      ['开头版本','3 版可选（B 版已采用）','ok'],
+      ['未完成项', hasDeg ? '第 12s 使用文字卡替代，可一键上传替换' : '无','wa'],
+      ['降级记录', hasDeg ? '1 处（素材匹配 0.42）' : '无','wa']
+    ];
+    $('deliver').innerHTML = rows.map(function(r){
+      var ic = r[2]==='ok'?'✓':'!';
+      var cls = r[2]==='ok'?'var(--green)':'var(--amber)';
+      return '<div class="deliver-item"><span class="k">'+r[0]+'</span><span style="color:'+cls+';font-family:var(--mono)">'+ic+'</span><span style="flex:1">'+r[1]+'</span></div>';
+    }).join('');
+  }
+
+  /* ---------- confirm modal ---------- */
+  var pendingChoice='replace', pendingCb=null;
+  function askConfirm(cb){
+    pendingCb=cb; pendingChoice='replace';
+    document.querySelectorAll('.opt').forEach(function(o,i){ o.classList.toggle('sel', i===0); });
+    $('mask').classList.add('on');
+    log('WAITING → R2 确认（素材授权/匹配）','a');
+  }
+  document.querySelectorAll('.opt').forEach(function(o){
+    o.onclick=function(){
+      document.querySelectorAll('.opt').forEach(function(x){x.classList.remove('sel');});
+      o.classList.add('sel'); pendingChoice=o.dataset.o;
+    };
+  });
+  $('mOk').onclick=function(){
+    $('mask').classList.remove('on');
+    log('USER → 选择「'+pendingChoice+'」','g');
+    if(pendingCb){ var cb=pendingCb; pendingCb=null; cb(pendingChoice); }
+  };
+  $('mCancel').onclick=function(){
+    $('mask').classList.remove('on');
+    log('USER → 稍后处理（继续其他节点）','a');
+    if(pendingCb){ var cb=pendingCb; pendingCb=null; cb('replace'); }
+  };
+
+  /* ---------- rerun one ---------- */
+  function rerunOne(i){
+    var n=state.nodes[i];
+    var before = n.status;
+    n.status='running'; renderPlan('plan3', true);
+    log('USER → 只重跑 '+n.id+'（编辑作用域：'+n.id+'）','a');
+    state.nodes.forEach(function(x,j){ if(j!==i && x.status!=='degraded') x.status = x.status==='done'?'reused':x.status; });
+    setTimeout(function(){
+      n.status='done'; n.note='';
+      state.degraded = state.nodes.some(function(x){return x.status==='degraded';});
+      renderPlan('plan3', true);
+      log(n.id+' → ok（下游未重跑，复用上游产出）','g');
+      toast('只重跑了 '+n.id+'，其他节点复用');
+      renderChecks();
+      renderDeliver(state.degraded);
+      $('verdict').innerHTML = state.degraded
+        ? '<span style="color:var(--amber)">部分完成 · 1 处降级</span>'
+        : '<span style="color:var(--green)">全部通过 · 可直接发布</span>';
+    }, 900);
+  }
+
+  /* ---------- show/hide ---------- */
+  function show(n){
+    state.step=n;
+    [1,2,3,4].forEach(function(k){
+      var el=$('s'+k);
+      if(k===n) el.classList.remove('hidden'); else el.classList.add('hidden');
+    });
+    $('stepNo').textContent=n;
+    $('stepName').textContent=['需求输入','约束与计划','执行中','交付'][n-1];
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  /* ---------- events ---------- */
+  $('btnParse').onclick=function(){
+    var t=$('input').value.trim();
+    if(!t){ toast('先写一句需求'); return; }
+    state.constraints = parse(t);
+    state.nodes = NODES.map(function(n){ return Object.assign({},n,{status:'wait',note:''}); });
+    renderChips(); renderPlan('plan', false);
+    var hasMissing = state.constraints.filter(function(c){return c.src==='i';}).length >= 4;
+    log('parse → '+state.constraints.length+' constraints（'+state.constraints.filter(function(c){return c.src==='i';}).length+' inferred）');
+    show(2);
+    if(hasMissing) toast('信息不足，我补了 '+state.constraints.filter(function(c){return c.src==='i';}).length+' 个默认值（标「补」）');
+  };
+  $('btnBack1').onclick=function(){ show(1); };
+  $('btnRun').onclick=startRun;
+  $('btnInject').onclick=function(){
+    state.failNext=true; toast('已设置：下一个「找素材」节点将失败');
+  };
+  $('btnSkip').onclick=function(){
+    clearInterval(state.timer);
+    state.nodes.forEach(function(n){ if(n.status==='running'||n.status==='wait') n.status='done'; });
+    finish();
+  };
+  $('btnRestart').onclick=function(){
+    state.nodes=[]; state.constraints=[]; state.degraded=false; state.elapsed=0;
+    $('log').innerHTML='<div class="muted">等待开始…</div>';
+    $('pvCap').textContent='等待生成'; $('pvBadge').textContent='9:16 · 00:00';
+    $('pvBar').style.width='0'; $('pvT').textContent='00:00';
+    $('checks').innerHTML='';
+    show(1);
+  };
+  $('btnRerunAll').onclick=function(){
+    log('对照：全量重跑（S1→S6，9 次调用）','a');
+    toast('全量重跑 = 9 次调用；只改一处只需 3 次');
+  };
+  document.querySelectorAll('.preset').forEach(function(p){
+    p.onclick=function(){ $('input').value=p.dataset.t; };
+  });
+
+  // init
+  renderChecks();
+
+  // QA/demo hook: ?demo=1|3|4 auto-drives the flow
+  var dm = location.search.match(/[?&]demo=(\d+)/);
+  if (dm) {
+    var lv = +dm[1];
+    setTimeout(function(){
+      $('btnParse').click();
+      if (lv >= 3) {
+        $('btnRun').click();
+        setTimeout(function(){ state.failNext = true; }, 80);
+        if (lv >= 4) {
+          var wait = setInterval(function(){
+            if ($('mask').classList.contains('on')) {
+              clearInterval(wait);
+              setTimeout(function(){ $('mOk').click(); }, 260);
+            }
+          }, 200);
+        }
+      }
+    }, 120);
+  }
+})();
+</script>
+</body>
+</html>
