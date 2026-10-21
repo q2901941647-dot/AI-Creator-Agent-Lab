@@ -1,7 +1,7 @@
 # AI Creator Agent Lab
 
-**AI 创作智能体策略与评测作品集 · 32 页
-🔗 **在线预览**：`https://q2901941647-dot.github.io/AI-Creator-Agent-Lab/`
+AI 创作智能体策略与评测作品集 · 32 页
+🔗 在线预览：`https://q2901941647-dot.github.io/AI-Creator-Agent-Lab/`
 <!-- 上传后把上面这行替换成真实链接，并删掉这条注释 -->
 
 ---
@@ -51,37 +51,6 @@
 评测分数是**原型态基线**（被测对象为自建原型，工具调用为演示实现），
 用于验证评测流程本身可用，**不作为任何真实模型的能力结论**。
 
-## 部署到 GitHub Pages
-
-### 方式 A：网页拖拽（不需要命令行）
-
-1. 新建仓库：`New repository` → 名称建议 `creator-agent-lab` → 选 **Public** → Create
-2. 进入仓库 → `Add file` → `Upload files`
-3. 把本文件夹里的**所有文件**（含 `.nojekyll`）一起拖进去 → `Commit changes`
-4. `Settings` → 左侧 `Pages` → Source 选 `Deploy from a branch`
-   → Branch 选 `main`、目录选 `/ (root)` → `Save`
-5. 等 1–2 分钟，访问 `https://<你的用户名>.github.io/creator-agent-lab/`
-
-> 右上角的「下载 PDF」会自动指向 `portfolio.pdf`，不需要改任何链接。
-
-### 方式 B：命令行
-
-```bash
-git init
-git add .
-git commit -m "portfolio: AI Creator Agent Lab"
-git branch -M main
-git remote add origin https://github.com/<你的用户名>/creator-agent-lab.git
-git push -u origin main
-```
-
-推送后同样在 `Settings → Pages` 里开启即可。
-
-### 常见问题
-
-- **页面 404**：Pages 首次构建需要 1–2 分钟；确认分支是 `main`、目录是 `/ (root)`。
-- **样式正常但图片/附件打不开**：检查文件名大小写是否与 HTML 中的引用完全一致。
-- **想换仓库名**：改名不影响页面，但预览地址会跟着变。
 
 ## 联系
 
